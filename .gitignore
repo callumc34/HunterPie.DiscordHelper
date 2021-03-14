@@ -1,5 +1,6 @@
 bin/
 obj/
+.vs/
 
 Server/.env
 Server/node_modules
