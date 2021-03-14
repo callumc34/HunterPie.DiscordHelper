@@ -1,0 +1,26 @@
+{
+  "name": "hunterpie-discordhelper-server",
+  "version": "1.0.0",
+  "description": "Server to interact with the HunterPie.DiscordHelper plugin.",
+  "main": "Server.js",
+  "scripts": {
+    "test": "node Server.js",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/callumc34/HunterPie.DiscordHelper.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/callumc34/HunterPie.DiscordHelper/issues"
+  },
+  "homepage": "https://github.com/callumc34/HunterPie.DiscordHelper#readme",
+  "dependencies": {
+    "dotenv": "^8.2.0",
+    "util": "^0.12.3",
+    "websocket": "^1.0.33",
+    "ws": "^7.4.4"
+  }
+}
