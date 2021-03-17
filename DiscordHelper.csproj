@@ -2,6 +2,10 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <Authors>Callumc34</Authors>
+    <Company />
+    <Description>Plugin for HunterPie</Description>
+    <UserSecretsId>f21ebaa7-94ee-4590-ab95-bbb9753c7698</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>

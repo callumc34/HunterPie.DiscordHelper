@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Security.Cryptography;
+using System.Web;
 using HunterPie.Core;
 using WebSocketSharp;
 using Newtonsoft.Json;
@@ -9,7 +10,7 @@ using Debugger = HunterPie.Logger.Debugger;
 
 static class Constants
 {
-    public const string FALLBACK_URI = "";
+    public const string FALLBACK_URI = "wss://server-mhwdiscordhelper.herokuapp.com/";
 }
 
 namespace HunterPie.Plugins
@@ -44,12 +45,10 @@ namespace HunterPie.Plugins
             {
                 Debugger.Error("Config.json for DiscordHelper not found!");
                 Debugger.Module("Creating Config.json.", Name);
-                File.WriteAllText(configPath,"{\n\t\"uri\": \"" + Constants.FALLBACK_URI + "\n\t\"id\": \"" + CreateUniqueID() + "\"\n}");
-            } else
-            {
-                string configSerialized = File.ReadAllText(configPath);
-                config = JsonConvert.DeserializeObject<ModConfig>(configSerialized);
-            }
+                File.WriteAllText(configPath,"{\n\t\"uri\": \"" + Constants.FALLBACK_URI + "\",\n\t\"id\": \"" + CreateUniqueID() + "\"\n}");
+            } 
+            string configSerialized = File.ReadAllText(configPath);
+            config = JsonConvert.DeserializeObject<ModConfig>(configSerialized);
 
             SetupWsClient(config.uri, config.id);
 
@@ -71,9 +70,31 @@ namespace HunterPie.Plugins
             WsClient.Close(CloseStatusCode.Away);
         }
 
+        private void handleMessage(object sender, MessageEventArgs e)
+        {
+            string[] info = e.Data.Split(';');
+            //Wrong id assigned or error
+            if (info[0] != config.id)
+            {
+                return;
+            }
+            switch (info[1]) {
+                case "request-sid":
+                    WsClient.Send(string.Format("{0};sid;1;{1};", config.id, Context.Player.SessionID));
+                    break;
+                case "request-build":
+                    WsClient.Send(string.Format("{0};build;1;{1};", config.id,
+                        Honey.LinkStructureBuilder(Context.Player.GetPlayerGear())));
+                    break;
+                default:
+                    //Invalid command recieved
+                    break;
+            }
+        }
+
         private int SetupWsClient(string uri, string id)
         {
-            WsClient = new WebSocket(uri  +"/?" + id);
+            WsClient = new WebSocket(uri + "/?uniqueid=" + HttpUtility.UrlEncode(id));
 
             WsClient.OnOpen += (sender, e) =>
             {
@@ -85,6 +106,13 @@ namespace HunterPie.Plugins
             {
                 Debugger.Module("Disconnected from discord server.", Name);
             };
+
+            WsClient.OnMessage += (sender, e) =>
+            {
+                handleMessage(sender, e);
+            };
+
+            WsClient.Connect();
 
             return 1;
         }
