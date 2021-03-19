@@ -1,6 +1,6 @@
 bin/
 obj/
 .vs/
-lib/
+./lib/
 
 Config.json

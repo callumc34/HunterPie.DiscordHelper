@@ -8,6 +8,8 @@ using Newtonsoft.Json;
 
 using Debugger = HunterPie.Logger.Debugger;
 
+//TODO(Callum): Constant ping pong heartbeats for heroku to stay alive
+
 static class Constants
 {
     public const string FALLBACK_URI = "wss://server-mhwdiscordhelper.herokuapp.com/";
@@ -67,7 +69,9 @@ namespace HunterPie.Plugins
 
         public void Unload()
         {
-            WsClient.Close(CloseStatusCode.Away);
+            WsClient.Close();
+            WsClient = null;
+            Context = null;
         }
 
         private void handleMessage(object sender, MessageEventArgs e)
@@ -84,7 +88,7 @@ namespace HunterPie.Plugins
                     break;
                 case "request-build":
                     WsClient.Send(string.Format("{0};build;1;{1};", config.id,
-                        Honey.LinkStructureBuilder(Context.Player.GetPlayerGear())));
+                        HttpUtility.UrlEncode(Honey.LinkStructureBuilder(Context.Player.GetPlayerGear()))));
                     break;
                 default:
                     //Invalid command recieved
@@ -94,7 +98,7 @@ namespace HunterPie.Plugins
 
         private int SetupWsClient(string uri, string id)
         {
-            WsClient = new WebSocket(uri + "/?uniqueid=" + HttpUtility.UrlEncode(id));
+            WsClient = new WebSocket(uri + "?uniqueid=" + HttpUtility.UrlEncode(id));
 
             WsClient.OnOpen += (sender, e) =>
             {
@@ -104,7 +108,7 @@ namespace HunterPie.Plugins
 
             WsClient.OnClose += (sender, e) =>
             {
-                Debugger.Module("Disconnected from discord server.", Name);
+                Debugger.Module("Disconnected from discord server. Restart plugin to reconnect.", Name);
             };
 
             WsClient.OnMessage += (sender, e) =>
