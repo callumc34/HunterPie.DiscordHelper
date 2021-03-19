@@ -83,6 +83,9 @@ namespace HunterPie.Plugins
                 return;
             }
             switch (info[1]) {
+                case "heartbeat":
+                    WsClient.Send(string.Format("{0};heartbeat;", config.id));
+                    break;
                 case "request-sid":
                     WsClient.Send(string.Format("{0};sid;1;{1};", config.id, Context.Player.SessionID));
                     break;

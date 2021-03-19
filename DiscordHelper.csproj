@@ -20,4 +20,8 @@
     <ProjectReference Include="..\HunterPie\HunterPie.csproj" />
   </ItemGroup>
 
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Exec Command="cp $(TargetPath) $(ProjectDir)plugin\\" />
+  </Target>
+
 </Project>
