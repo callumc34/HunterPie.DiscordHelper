@@ -111,6 +111,7 @@ namespace HunterPie.Plugins
 
             WsClient.OnClose += (sender, e) =>
             {
+                Debugger.Module("Close code: " + e.Code + " Close reason: " + e.Reason, Name);
                 Debugger.Module("Disconnected from discord server. Restart plugin to reconnect.", Name);
             };
 
