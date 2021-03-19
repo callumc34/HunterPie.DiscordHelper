@@ -11,7 +11,7 @@
         "UpdateUrl": "https://raw.githubusercontent.com/Callumc34/HunterPie.DiscordHelper/master/plugin/",
         "MinimumVersion": "1.0.5.0",
         "FileHashes": {
-            "DiscordHelper.dll": "795b6087b416d492095223d6b653c4e3439edfb87483ec329c44c1d2b78bd4ba",
+            "DiscordHelper.dll": "8083f4dfc1a58b40f974a8507db9def70f8cc09833bb51813658114961ec02ee",
             "lib\\websocket-sharp.dll": "339c740207f308d9e86b03a4d45d29f17c52476d1ecda88afa9f607966d226fc"
         }
     }
