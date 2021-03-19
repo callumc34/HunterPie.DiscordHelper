@@ -1,0 +1,18 @@
+﻿{
+    "Name": "DiscordHelper",
+    "EntryPoint": "DiscordHelper.cs",
+    "Description": "Discord functionality for hunterpie through a discord bot",
+    "Author": "Callumc34",
+    "Version": "0.1",
+    "Dependencies": [
+        "lib\\websocket-sharp.dll"
+    ],
+    "Update": {
+        "UpdateUrl": "https://raw.githubusercontent.com/Callumc34/HunterPie.DiscordHelper/master/plugin/",
+        "MinimumVersion": "0.1",
+        "FileHashes": {
+            "DamageChat.dll": "795b6087b416d492095223d6b653c4e3439edfb87483ec329c44c1d2b78bd4ba",
+            "lib\\websocket-sharp.dll": "339c740207f308d9e86b03a4d45d29f17c52476d1ecda88afa9f607966d226fc"
+        }
+    }
+}
