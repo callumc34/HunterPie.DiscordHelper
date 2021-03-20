@@ -5,6 +5,7 @@ using System.IO;
 using System.Security.Cryptography;
 using System.Web;
 using HunterPie.Core;
+using HunterPie.Core.Input;
 using WebSocketSharp;
 using Newtonsoft.Json;
 
@@ -15,6 +16,7 @@ using Debugger = HunterPie.Logger.Debugger;
 static class Constants
 {
     public const string FALLBACK_URI = "wss://server-mhwdiscordhelper.herokuapp.com/";
+    public const string FALLBACK_HOTKEY = "Shift+Ctrl+R";
 }
 
 namespace HunterPie.Plugins
@@ -32,6 +34,7 @@ namespace HunterPie.Plugins
         {
             public string uri;
             public string id;
+            public string retry;
         }
 
         public string Name { get; set; }
@@ -44,6 +47,7 @@ namespace HunterPie.Plugins
         private string configPath = Path.Combine(Environment.CurrentDirectory, "Modules\\DiscordHelper", "Config.json");
         private ModConfig config;
 
+
         public void Initialize(Game context)
         {
             Name = "DiscordHelper";
@@ -53,15 +57,38 @@ namespace HunterPie.Plugins
 
             if (!File.Exists(configPath))
             {
-                Debugger.Error("Config.json for DiscordHelper not found!");
-                Debugger.Module("Creating Config.json.", Name);
-                File.WriteAllText(configPath,"{\n\t\"uri\": \"" + Constants.FALLBACK_URI + "\",\n\t\"id\": \"" + CreateUniqueID() + "\"\n}");
+                string id = CreateUniqueID();
+                createConfig(id);
             } 
-            string configSerialized = File.ReadAllText(configPath);
-            config = JsonConvert.DeserializeObject<ModConfig>(configSerialized);
+            loadConfig(configPath);
+
+            if (config.uri.IsNullOrEmpty())
+            {
+                config.uri = Constants.FALLBACK_URI;
+            }
+            if (config.retry.IsNullOrEmpty())
+            {
+                config.retry = Constants.FALLBACK_HOTKEY;
+            }
+            if (config.id.IsNullOrEmpty())
+            {
+                string id = CreateUniqueID();
+                createConfig(id);
+                loadConfig(configPath);
+            }
+
+            int hkId = Hotkey.Register(config.retry, retryConnection);
 
             SetupWsClient(config.uri, config.id);
 
+        }
+
+        public void createConfig(string uniqueID, string uri = Constants.FALLBACK_URI, string retry = Constants.FALLBACK_HOTKEY)
+        {
+            Debugger.Error("Config.json for DiscordHelper not found!");
+            Debugger.Module("Creating Config.json.", Name);
+            File.WriteAllText(
+                configPath, "{\n\t\"uri\": \"" + uri + "\",\n\t\"id\": \"" + uniqueID + "\",\n\t\"retry\": \"" + retry + "\"\n}");
         }
 
         public string CreateUniqueID()
@@ -82,7 +109,7 @@ namespace HunterPie.Plugins
             Context = null;
         }
 
-        public string getDps(int[] range)
+        public string getDamageString(int[] range)
         {
             //Copied from DamageChat plugin - https://github.com/ricochhet/HunterPie.DamageChat/blob/master/plugin/plugin.cs
             List<Member> members = Context.Player.PlayerParty.Members;
@@ -91,7 +118,7 @@ namespace HunterPie.Plugins
             {
                 if (member.Name != "" && member.Name != null)
                 {
-                    string DamageString = $"{member.Name}: {member.Damage} ({(Math.Floor(member.DamagePercentage * 100) / 100) * 100}%) damage";
+                    string DamageString = $"{member.Name}: {member.Damage} ({(Math.Floor(member.DamagePercentage * 100) / 100) * 100}%) damage - {Math.Round(member.Damage / Context.Player.PlayerParty.Epoch.Seconds, 2)} dps";
                     damageInformation.Add(new DamageInformation { DamageValue = member.Damage, DamageMessage = DamageString });
                 }
             }
@@ -119,6 +146,25 @@ namespace HunterPie.Plugins
             return string.Join(";", joinList.Select(obj => obj.DamageMessage));
         }
 
+        private void loadConfig(string path)
+        {
+            string configSerialized = File.ReadAllText(configPath);
+            config = JsonConvert.DeserializeObject<ModConfig>(configSerialized);
+        }
+
+        private void retryConnection()
+        {
+            try
+            {
+                WsClient.Close();
+            } catch
+            {
+                
+            }
+            WsClient = null;
+            SetupWsClient(config.uri, config.id);
+        }
+
         private void handleMessage(object sender, MessageEventArgs e)
         {
             //info[0] = uniqueid
@@ -132,7 +178,7 @@ namespace HunterPie.Plugins
                 return;
             }
             string[] args = new string[info.Length - 2];
-            for (var i = 2; i < info.Length; i++)
+            for (int i = 2; i < info.Length; i++)
             {
                 args[i - 2] = info[i];
             }
@@ -152,7 +198,7 @@ namespace HunterPie.Plugins
                     int[] range = (from s in args where int.TryParse(s, out i) select i).ToArray();
                     if (range.Length == args.Length && range.Last() <= 4 && range.First() > 0) 
                     {
-                        WsClient.Send(string.Format("{0};dps;{1};{2};", config.id, range.Length, getDps(range)));
+                        WsClient.Send(string.Format("{0};dps;{1};{2};", config.id, range.Length, getDamageString(range)));
                     }
                     else
                     {
@@ -178,7 +224,7 @@ namespace HunterPie.Plugins
             WsClient.OnClose += (sender, e) =>
             {
                 Debugger.Module("Close code: " + e.Code + " Close reason: " + e.Reason, Name);
-                Debugger.Module("Disconnected from discord server. Restart plugin to reconnect.", Name);
+                Debugger.Module("Disconnected from discord server. Press " + config.retry + " to try reconnect.", Name);
             };
 
             WsClient.OnMessage += (sender, e) =>
