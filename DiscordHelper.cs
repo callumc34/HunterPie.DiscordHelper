@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Linq;
+using System.Collections.Generic;
 using System.IO;
 using System.Security.Cryptography;
 using System.Web;
@@ -19,6 +21,12 @@ namespace HunterPie.Plugins
 {
     public class DiscordHelper : IPlugin
     {
+
+        public class DamageInformation
+        {
+            public float DamageValue { get; set; }
+            public string DamageMessage { get; set; }
+        }
 
         internal class ModConfig
         {
@@ -74,13 +82,59 @@ namespace HunterPie.Plugins
             Context = null;
         }
 
+        public string getDps(int[] range)
+        {
+            //Copied from DamageChat plugin - https://github.com/ricochhet/HunterPie.DamageChat/blob/master/plugin/plugin.cs
+            List<Member> members = Context.Player.PlayerParty.Members;
+            List<DamageInformation> damageInformation = new List<DamageInformation>();
+            foreach (Member member in members)
+            {
+                if (member.Name != "" && member.Name != null)
+                {
+                    string DamageString = $"{member.Name}: {member.Damage} ({(Math.Floor(member.DamagePercentage * 100) / 100) * 100}%) damage";
+                    damageInformation.Add(new DamageInformation { DamageValue = member.Damage, DamageMessage = DamageString });
+                }
+            }
+
+            List<DamageInformation> ordered = damageInformation.OrderByDescending(dmg => dmg.DamageValue).ToList();
+            List<DamageInformation> joinList;
+            if (range.Length < 2)
+            {
+                joinList = new List<DamageInformation>();
+                joinList.Add(ordered[range.First() - 1]);
+            }
+            else
+            {
+                if ((range.Last() - range.First()) > ordered.Count - range.First())
+                {
+                    joinList = ordered;
+                }
+                else
+                {
+                    joinList = ordered.GetRange(range.First() - 1, range.Last() - range.First() + 1);
+                }
+                
+            }
+
+            return string.Join(";", joinList.Select(obj => obj.DamageMessage));
+        }
+
         private void handleMessage(object sender, MessageEventArgs e)
         {
+            //info[0] = uniqueid
+            //info[1] = command
+            //info[2...] = args
             string[] info = e.Data.Split(';');
+            info = info.Take(info.Length - 1).ToArray();
             //Wrong id assigned or error
             if (info[0] != config.id)
             {
                 return;
+            }
+            string[] args = new string[info.Length - 2];
+            for (var i = 2; i < info.Length; i++)
+            {
+                args[i - 2] = info[i];
             }
             switch (info[1]) {
                 case "heartbeat":
@@ -92,6 +146,18 @@ namespace HunterPie.Plugins
                 case "request-build":
                     WsClient.Send(string.Format("{0};build;1;{1};", config.id,
                         HttpUtility.UrlEncode(Honey.LinkStructureBuilder(Context.Player.GetPlayerGear()))));
+                    break;
+                case "request-dps":
+                    int i = 0;
+                    int[] range = (from s in args where int.TryParse(s, out i) select i).ToArray();
+                    if (range.Length == args.Length && range.Last() <= 4 && range.First() > 0) 
+                    {
+                        WsClient.Send(string.Format("{0};dps;{1};{2};", config.id, range.Length, getDps(range)));
+                    }
+                    else
+                    {
+                        WsClient.Send(string.Format("{0};error;1;invalid-arguments;", config.id));
+                    }                    
                     break;
                 default:
                     //Invalid command recieved
