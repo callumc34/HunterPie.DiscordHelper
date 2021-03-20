@@ -1,4 +1,4 @@
-# HunterPie.DiscordHelper.Server
+# HunterPie.DiscordHelper
 
 <img src="plugin/icon.png" width=50%>
 
