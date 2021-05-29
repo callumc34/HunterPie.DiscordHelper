@@ -2,7 +2,7 @@
 
 <img src="plugin/icon.png" width=50%>
 
-HunterPie Plugin for interacting with a discord bot and server at [DiscordHelper.Servber](https://github.com/callumc34/HunterPie.DiscordHelper.Server).
+HunterPie Plugin for interacting with a discord bot and server at [DiscordHelper.Server](https://github.com/callumc34/HunterPie.DiscordHelper.Server).
 
 To add this bot to your server click [this](https://discord.com/api/oauth2/authorize?client_id=820790788682022912&permissions=2147601472&scope=bot) link.
 
